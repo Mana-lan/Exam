@@ -1,0 +1,4 @@
+git add file 1
+git status
+git commit -m "Something interesting"
+git push
