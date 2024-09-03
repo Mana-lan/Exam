@@ -14,4 +14,4 @@ git commit -m "Something interesting"
 
 ## The git push command is used to upload your local commits to a remote repository
 git push
-### By using git push, you ensure that your local changes are shared with others and that your remote repository is kept up-to-date with your local work.
+.
