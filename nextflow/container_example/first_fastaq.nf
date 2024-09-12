@@ -3,6 +3,7 @@ nextflow.enable.dsl = 2
 
 params.storeDir="${launchDir}/cache"
 params.publishDir= "${launchDir}/publish"
+params.out= "${launchDir}/output"
 params.accession="SRR16641606"
 
 process prefetch {
@@ -57,22 +58,37 @@ process convert_to_fastq {
 
 process fasta_qc {
 storeDir params.storeDir
-publishDir params.publishDir
-  container "https://depot.galaxyproject.org/singularity/fastqc-rs%3A0.3.4--h101ab07_0"
+publishDir params.publish
+  container "https://depot.galaxyproject.org/singularity/fastqc%3A0.12.1--hdfd78af_0"
   input: 
    path accession
   output: 
    path "${accession.getSimpleName()}.fastqc"
   script:
   """
-  
+  mkdir fastqc
+  fastqc --noextract --nogroup -o fastqc ${accession} > ${accession.getSimpleName()}.fastqc
   """
 } 
 
- 
- 
 workflow {
   varfetch=prefetch(Channel.from(params.accession))
   varconvert = convert_to_fastq(varfetch) 
   fasta_qc(varconvert)
 }
+
+//Get to Singularity shell
+//idefix@WIN-HVW6TOI:~/Rep1/nextflow/container_example$ cd work/16 (16 from nextflow run first_fastaq.nf -profile singularity)
+//idefix@WIN-HVW6TOI:~/Rep1/nextflow/container_example/work/16$ ls
+//e00d5e4a7fa614946316bed90e08c4
+//idefix@WIN-HVW6TOI:~/Rep1/nextflow/container_example/work/16$ cd e00d5e4a7fa614946316bed90e08c4
+//idefix@WIN-HVW6TOI:~/Rep1/nextflow/container_example/work/16/e00d5e4a7fa614946316bed90e08c4$ ls
+//SRR16641606.fastq
+//idefix@WIN-HVW6TOI:~/Rep1/nextflow/container_example/work/16/e00d5e4a7fa614946316bed90e08c4$ ls
+//depot.galaxyproject.org-singularity-fastqc-rs%3A0.3.4--h101ab07_0.img
+//depot.galaxyproject.org-singularity-ngsutils%3A0.5.9--py27h9801fc8_5.img
+//depot.galaxyproject.org-singularity-sra-tools%3A2.11.0--pl5321ha49a11a_3.img 
+//ncbi-sra-tools.img
+//idefix@WIN-HVW6TOI:~/Rep1/nextflow/container_example$ singularity_containers
+//idefix@WIN-HVW6TOI:~/Rep1/nextflow/container_example$ singularity_containers/depot.galaxyproject.org-singularity-fastqc-rs%3A0.3.4--h101ab07_0.img
+//Singularity>
