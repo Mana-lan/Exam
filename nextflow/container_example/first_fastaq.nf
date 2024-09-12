@@ -38,26 +38,41 @@ process convert_to_fastq {
     path "${accession}.fastq"
   script:
   """
-  fasterq-dump $accession
+  fasterq-dump $accession --split
   """
-}
+  }
+  
+//process stats_of_fastq {
+//publishDir params.publishDir
+//  container "https://depot.galaxyproject.org/singularity/ngsutils%3A0.5.9--py27h9801fc8_5"
+//  input: 
+//   path accession
+//  output: 
+//   path "${accession.getSimpleName()}_stats.txt"
+//  script:
+//  """
+//  fastqutils stats ${accession} > ${accession.getSimpleName()}_stats.txt
+//  """
+//} 
 
-process stats_of_fastq {
+process fasta_qc {
+storeDir params.storeDir
 publishDir params.publishDir
-  container "https://depot.galaxyproject.org/singularity/ngsutils%3A0.5.9--py27h9801fc8_5"
+  container "https://depot.galaxyproject.org/singularity/fastqc-rs%3A0.3.4--h101ab07_0"
   input: 
    path accession
   output: 
-   path "${accession.getSimpleName()}_stats.txt"
+   path "${accession.getSimpleName()}.fastqc"
   script:
   """
-  fastqutils stats ${accession} > ${accession.getSimpleName()}_stats.txt
+  
   """
 } 
+
  
  
 workflow {
   varfetch=prefetch(Channel.from(params.accession))
   varconvert = convert_to_fastq(varfetch) 
-  stats_of_fastq(varconvert)
+  fasta_qc(varconvert)
 }
