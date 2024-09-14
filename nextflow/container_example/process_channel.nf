@@ -19,24 +19,23 @@ process prefetch {
 }
 
 
-process dump_fastq {
+process fasterqdump {
  storeDir params.storeDir
- publishDir params.publishDir
   container "https://depot.galaxyproject.org/singularity/sra-tools%3A2.11.0--pl5321ha49a11a_3"
   input:
-    path accession
+    path infile
   output:
-    path "${accession}.fastq"
+    path "${infile.getSimpleName()}*.fastq"
   script:
   """
-  fasterq-dump $accession
+  fasterq-dump $infile
   """
 }
 
 
 process stats_fastq {
 storeDir params.storeDir
-publishDir params.publishDir
+publishDir params.publishDir, mode:"copy", overwrite:true
   container "https://depot.galaxyproject.org/singularity/ngsutils%3A0.5.9--py27h9801fc8_5"
   input: 
    path accession
@@ -50,7 +49,7 @@ publishDir params.publishDir
 
 process fastqc {
 storeDir params.storeDir
-publishDir params.publishDir
+publishDir params.publishDir, mode:"copy", overwrite:true
  container "https://depot.galaxyproject.org/singularity/fastqc%3A0.12.1--hdfd78af_0"
   input: 
     path accession
@@ -65,25 +64,28 @@ publishDir params.publishDir
 
 
 
-process multiqc {
-  container "https://depot.galaxyproject.org/singularity/multiqc%3A1.24.1--pyhdfd78af_0"
-  
- input:
-   path accession
- output: 
-   path params.storeDirDir
-  """
-  mkdir multiqc
-  multiqc > params.storeDir
-  """
-}
+//process multiqc {
+//  storeDir params.storeDir
+ // publishDir params.publishDir
+//  container "https://depot.galaxyproject.org/singularity/multiqc%3A1.24.1--pyhdfd78af_0"
+// input:
+//   path accession
+//output: 
+//   file "multiqc_report.html"
+//   file "multiqc_data" 
+//script:  
+//  """
+//  multiqc .
+//  """
+//}
 
-workflow { 
-  varfetch = prefetch(Channel.from(params.accession))
-  vardump = dump_fastq(varfetch) 
-  multiqc(vardump)
-}
 
+
+
+workflow {
+  varfetch=prefetch(Channel.from(params.accession))
+  fasterqdump(varfetch) 
+}
 
 
 
