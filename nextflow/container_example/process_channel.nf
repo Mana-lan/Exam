@@ -65,21 +65,32 @@ publishDir params.publishDir
 
 
 
-process mulitqc {
+process multiqc {
   container "https://depot.galaxyproject.org/singularity/multiqc%3A1.24.1--pyhdfd78af_0"
   
  input:
-   path params.publishDir
+   path accession
  output: 
-   path params.publishDir
+   path params.storeDirDir
   """
-  multiqc
+  mkdir multiqc
+  multiqc > params.storeDir
   """
 }
 
-workflow {
-  varfetch=prefetch(Channel.from(params.accession))
+workflow { 
+  varfetch = prefetch(Channel.from(params.accession))
   vardump = dump_fastq(varfetch) 
-  stats_fastq(vardump)
-
+  multiqc(vardump)
 }
+
+
+
+
+
+
+//workflow {
+//  varfetch=prefetch(Channel.from(params.accession))
+//  vardump = dump_fastq(varfetch) 
+//  stats_fastq(vardump)| multiqc
+//}
