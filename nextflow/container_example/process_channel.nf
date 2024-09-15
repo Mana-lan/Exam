@@ -2,8 +2,11 @@ nextflow.enable.dsl = 2
 
 params.storeDir="${launchDir}/cache"
 params.publishDir= "${launchDir}/publish"
+params.out = "${launchDir}/output"
 params.accession="SRR16641606"
 params.with_fastqc = false
+params.with_stats = false
+
 
 process prefetch {
   storeDir params.storeDir
@@ -33,7 +36,7 @@ process fasterqdump {
 }
 
 
-process stats_fastq {
+process fastqstats {
 storeDir params.storeDir
 publishDir params.publishDir, mode:"copy", overwrite:true
   container "https://depot.galaxyproject.org/singularity/ngsutils%3A0.5.9--py27h9801fc8_5"
@@ -49,50 +52,53 @@ publishDir params.publishDir, mode:"copy", overwrite:true
 
 process fastqc {
 storeDir params.storeDir
-publishDir params.publishDir, mode:"copy", overwrite:true
- container "https://depot.galaxyproject.org/singularity/fastqc%3A0.12.1--hdfd78af_0"
+publishDir params.out, mode:"copy", overwrite:true
+  container "https://depot.galaxyproject.org/singularity/fastqc%3A0.12.1--hdfd78af_0"
   input: 
     path accession
   output: 
-    path "${accession.getSimpleName()}.fastqc"
+    path "${accession.getSimpleName()}_fastqc"
  script:
-  """
-  mkdir fastqc
-  fastqc --noextract --nogroup -o fastqc ${accession} > ${accession.getSimpleName()}.fastqc
-  """
+   """
+   mkdir ${accession.getSimpleName()}_fastqc
+   fastqc -o ${accession.getSimpleName()}_fastqc $accession
+   """
 } 
 
 
-
-//process multiqc {
-//  storeDir params.storeDir
- // publishDir params.publishDir
-//  container "https://depot.galaxyproject.org/singularity/multiqc%3A1.24.1--pyhdfd78af_0"
-// input:
-//   path accession
-//output: 
-//   file "multiqc_report.html"
-//   file "multiqc_data" 
-//script:  
-//  """
-//  multiqc .
-//  """
-//}
-
-
-
-
-workflow {
-  varfetch=prefetch(Channel.from(params.accession))
-  fasterqdump(varfetch) 
+process multiqc {
+ storeDir params.storeDir
+ publishDir params.publishDir
+ container "https://depot.galaxyproject.org/singularity/multiqc%3A1.24.1--pyhdfd78af_0"
+ input:
+   path accession
+ output: 
+   file  "multiqc_report.html"
+   file  "multiqc_data"
+ script:  
+  """
+   multiqc . 
+  """
 }
 
 
 
 
+//workflow {
+//  varfetch = prefetch(Channel.from(params.accession))
+//  vardump = fastqc(varfetch)
+//  multiqc(vardump)   
+//}
+
 
 //workflow {
-//  varfetch=prefetch(Channel.from(params.accession))
-//  vardump = dump_fastq(varfetch) 
-//  stats_fastq(vardump)| multiqc
+//	prefetch(Channel.from(params.accession)) | fasterqdump | flatten | fastqc
 //}
+
+
+workflow {
+  varfetch=prefetch(Channel.from(params.accession))
+  vardump = fasterqdump(varfetch) 
+  varfastq = fastqc(vardump)
+  multiqc(varfastq)
+}
