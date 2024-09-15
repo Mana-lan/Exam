@@ -5,7 +5,7 @@ params.publishDir= "${launchDir}/publish"
 params.out = "${launchDir}/output"
 params.accession="SRR16641606"
 params.with_fastqc = true
-params.with_stats = true
+params.with_stats = false
 
 //process: download a file form the NCBI with the accession number
 
@@ -30,12 +30,12 @@ process fasterqdump {
  storeDir params.storeDir
   container "https://depot.galaxyproject.org/singularity/sra-tools%3A2.11.0--pl5321ha49a11a_3"
   input:
-    path infile
+    path accession
   output:
-    path "${infile.getSimpleName()}*.fastq"
+    path "${accession.getSimpleName()}*.fastq"
   script:
   """
-  fasterq-dump $infile --split-3
+  fasterq-dump $accession --split-3
   """
 }
 
@@ -69,11 +69,11 @@ publishDir params.out, mode:"copy", overwrite:true
   input: 
     path accession
   output: 
-    path "${accession.getSimpleName()}_fastqc"
+    path "fastqc"
  script:
    """
-   mkdir ${accession.getSimpleName()}_fastqc
-   fastqc -o ${accession.getSimpleName()}_fastqc $accession
+   mkdir fastqc
+   fastqc -o fastqc ${accession}
    """
 } 
 
@@ -116,7 +116,8 @@ process multiqc {
 
 
 workflow {
-  varfetch=prefetch(Channel.from(params.accession)) | flatten
+  prefetchChannel = Channel.from(params.accession)
+  varfetch = prefetch(prefetchChannel) | flatten
   vardump = fasterqdump(varfetch) 
    if(params.with_stats) {
       varfastq = fastqstats(vardump)
@@ -124,10 +125,10 @@ workflow {
    if(params.with_fastqc) {
       varfastq = fastqc(vardump)
    }   
-//  multiqc(varfastq)
+  multiqc(varfastq)
 }
 
-
+//definition with one channel and an option
 
 
 
