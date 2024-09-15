@@ -5,7 +5,7 @@ params.publishDir= "${launchDir}/publish"
 params.out = "${launchDir}/output"
 params.accession="SRR16641606"
 params.with_fastqc = true
-params.with_stats = false
+params.with_stats = true
 
 //process: download a file form the NCBI with the accession number
 
@@ -78,7 +78,7 @@ publishDir params.out, mode:"copy", overwrite:true
 } 
 
 //process: Make pre-processing tasks on fastq files for quality control for adapter trimming, quality filtering etc.. 
-//The -5 in script tells fastp to tri, the first five bases form the 5´end (beginning) of each read. Option "-i" specifies 
+//The -5 in script tells fastp to tri, the first five bases from the 5´end (beginning) of each read as sliding window. Option "-i" specifies 
 //the input raw fastaq which should be pre-processed. input are fastq files.
 
 process fastP {
@@ -115,27 +115,13 @@ process multiqc {
 }
 
 
-
-
-//workflow {
-//  varfetch = prefetch(Channel.from(params.accession))
-//  vardump = fastqc(varfetch)
-//  multiqc(vardump)   
-//}
-
-
-//workflow {
-//	prefetch(Channel.from(params.accession)) | fasterqdump | flatten | fastqc
-//}
-
-
 workflow {
   varfetch=prefetch(Channel.from(params.accession)) | flatten
   vardump = fasterqdump(varfetch) 
-   if(params.with_stats == true) {
+   if(params.with_stats) {
       varfastq = fastqstats(vardump)
    }
-   if(params.with_fastqc == true) {
+   if(params.with_fastqc) {
       varfastq = fastqc(vardump)
    }   
 //  multiqc(varfastq)
