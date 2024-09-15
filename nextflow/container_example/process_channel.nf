@@ -4,7 +4,7 @@ params.storeDir="${launchDir}/cache"
 params.publishDir= "${launchDir}/publish"
 params.out = "${launchDir}/output"
 params.accession="SRR16641606"
-params.with_fastqc = false
+params.with_fastqc = true
 params.with_stats = false
 
 //process: download a file form the NCBI with the accession number
@@ -130,10 +130,15 @@ process multiqc {
 
 
 workflow {
-  varfetch=prefetch(Channel.from(params.accession))
+  varfetch=prefetch(Channel.from(params.accession)) | flatten
   vardump = fasterqdump(varfetch) 
-  varfastq = fastqc(vardump)
-  multiqc(varfastq)
+   if(params.with_stats == true) {
+      varfastq = fastqstats(vardump)
+   }
+   if(params.with_fastqc == true) {
+      varfastq = fastqc(vardump)
+   }   
+//  multiqc(varfastq)
 }
 
 
