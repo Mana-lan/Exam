@@ -83,7 +83,7 @@ process fastP {
 }
 
 
-process multiqc {
+process Multiqc {
  storeDir params.storeDir
  publishDir params.publishDir, mode: "copy", overwrite: true
  container "https://depot.galaxyproject.org/singularity/multiqc%3A1.24.1--pyhdfd78af_0"
@@ -116,8 +116,9 @@ workflow {
   fastqcResult = fastqc(fastqcChannel)
   
   concatResult = fastPresult.concat(fastqcResult)
+  collectResult = concatResult | collect
  
-// multiqc(varfastq)
+  Multiqc(collectResult)
 }
 
 
