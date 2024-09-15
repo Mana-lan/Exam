@@ -7,6 +7,7 @@ params.accession="SRR16641606"
 params.with_fastqc = false
 params.with_stats = false
 
+//process: download a file form the NCBI with the accession number
 
 process prefetch {
   storeDir params.storeDir
@@ -21,6 +22,9 @@ process prefetch {
   """
 }
 
+//process: retrieves sequence data from the SRA database (1) and converting the compressed SRA format into FASTQ format. For paired-end reads  
+// The --split-3 three delivers separate files as an output: _1.fastq and _2.fastaq for the two paired reads (sequences from oposed direction) and the file 
+//_3.fastq for reads which has no oposed paire because this one was not properly sequenced
 
 process fasterqdump {
  storeDir params.storeDir
@@ -31,10 +35,13 @@ process fasterqdump {
     path "${infile.getSimpleName()}*.fastq"
   script:
   """
-  fasterq-dump $infile
+  fasterq-dump $infile --split-3
   """
 }
 
+//process: analysis the sequencing data contained in a FASTQ file and provide information such as in text file output: Number of reads, 
+//read length base composition in percentage of A,T,C,G), quality score and the content of GC (-i und -i st nicht notwendig es klärt aber 
+//den input und output im script
 
 process fastqstats {
 storeDir params.storeDir
@@ -46,9 +53,14 @@ publishDir params.publishDir, mode:"copy", overwrite:true
    path "${accession.getSimpleName()}_stats.txt"
   script:
   """
-  fastqutils stats ${accession} > ${accession.getSimpleName()}_stats.txt
+  fastqutils -i stats ${accession} > -o ${accession.getSimpleName()}_stats.txt
   """
 } 
+
+
+//process: generates a quality control report of fastq files. providing information such as per-base quality scores, GC content, 
+//sequence length distribution, and more. Option "-o" specifies the output directory where the fastaq report will be saved.
+
 
 process fastqc {
 storeDir params.storeDir
@@ -65,16 +77,37 @@ publishDir params.out, mode:"copy", overwrite:true
    """
 } 
 
+//process: Make pre-processing tasks on fastq files for quality control for adapter trimming, quality filtering etc.. 
+//The -5 in script tells fastp to tri, the first five bases form the 5´end (beginning) of each read. Option "-i" specifies 
+//the input raw fastaq which should be pre-processed. input are fastq files.
+
+process fastP {
+	publishDir params.out, mode: "copy", overwrite: true
+	container "https://depot.galaxyproject.org/singularity/fastp%3A0.23.4--hadf994f_3"
+	input:
+		path accession
+	output:
+		path "${accession.getSimpleName()}_trimmed.fastq"
+	
+	"""
+	fastp -i $accession -o ${accession.getSimpleName()}_trimmed.fastq -5
+	"""
+}
+
+//process: multiqc tool used in bioinformatics to aggregate and visualize the quality control (QC) reports from multiple tools 
+//across many samples into a single report. It supports a wide variety of bioinformatics tools such as FastQC, fastp, samtools, 
+//STAR, Salmon, and many others. MultiQC is typically used in pipelines where data from several samples and sequencing runs need 
+//to be processed and reviewed together. It takes as input among others fastqc and fastp files
 
 process multiqc {
  storeDir params.storeDir
- publishDir params.publishDir
+ publishDir params.publishDir, mode: "copy", overwrite: true
  container "https://depot.galaxyproject.org/singularity/multiqc%3A1.24.1--pyhdfd78af_0"
  input:
    path accession
  output: 
-   file  "multiqc_report.html"
-   file  "multiqc_data"
+   path  "multiqc_report.html"
+   path  "multiqc_data"
  script:  
   """
    multiqc . 
@@ -102,3 +135,12 @@ workflow {
   varfastq = fastqc(vardump)
   multiqc(varfastq)
 }
+
+
+
+
+
+//(1) SRA sequencing data refers to the sequencing data deposited in the Sequence Read Archive (SRA), a large public repository maintained 
+//by organizations like NCBI (National Center for Biotechnology Information), EBI (European Bioinformatics Institute), 
+//and DDBJ (DNA Data Bank of Japan). The SRA contains raw next-generation sequencing (NGS) data, 
+//such as whole-genome sequencing, RNA-seq, ChIP-seq, and other high-throughput sequencing experiments.
