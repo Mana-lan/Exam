@@ -2,7 +2,8 @@ nextflow.enable.dsl = 2
 
 params.storeDir="${launchDir}/cache"
 params.publishDir= "${launchDir}/publish"
-params.accession="M21012"
+params.out = "${launchDir}/output"
+params.accession="M21013"
 
 process downloadRef {
   storeDir params.storeDir
@@ -47,8 +48,19 @@ process mafftalign {
   """
 }
 
-
-
+process trimalign {
+ storeDir params.storeDir
+ publishDir params.out, mode: "copy", overwrite: true
+ container "https://depot.galaxyproject.org/singularity/trimal%3A1.5.0--h4ac6f70_0"
+ input:  
+   path infile
+  output:
+    path "${params.accession}trim.fasta"
+  script:
+  """
+  trimal -in $infile  -out ${params.accession}trim.fasta -automated1
+  """
+}
 
 
 
@@ -57,7 +69,9 @@ workflow {
   downloadRef(downloadChannel)
   fastaChannel = Channel.fromPath(params.storeDir)
   combinedChannel = combinedFiles(fastaChannel)
-  mafftalign(combinedChannel)
+  mafftaChannel = mafftalign(combinedChannel)
+  trimalign(mafftaChannel)
+
 }
 
 
