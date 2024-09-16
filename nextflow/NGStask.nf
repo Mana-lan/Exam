@@ -2,7 +2,6 @@ nextflow.enable.dsl = 2
 
 params.storeDir="${launchDir}/cache"
 params.publishDir= "${launchDir}/publish"
-
 params.accession="M21012"
 
 process downloadRef {
@@ -36,15 +35,15 @@ storeDir params.storeDir
 
 process mafftalign {
  storeDir params.storeDir
-params.publishDir= "${launchDir}/publish"
+ publishDir params.publishDir, mode:"copy", overwrite:true
  container "https://depot.galaxyproject.org/singularity/mafft%3A7.520--hec16e2b_1"
   input:  
    path infile
   output:
-    path "xxx"
+    path "${params.accession}mafft.fasta"
   script:
   """
-  mafft $infile > 
+  mafft $infile > ${params.accession}mafft.fasta
   """
 }
 
