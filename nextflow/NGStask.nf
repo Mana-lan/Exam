@@ -27,19 +27,38 @@ storeDir params.storeDir
     path infile
 
   output: 
-    path "combined.fasta"
+    path "${params.accession}combined.fasta"
 
    """
-   cat $infile/*.fasta > combined.fasta
+   cat $infile/*.fasta > "${params.accession}combined.fasta"
    """
 }
+
+process mafftalign {
+ storeDir params.storeDir
+params.publishDir= "${launchDir}/publish"
+ container "https://depot.galaxyproject.org/singularity/mafft%3A7.520--hec16e2b_1"
+  input:  
+   path infile
+  output:
+    path "xxx"
+  script:
+  """
+  mafft $infile > 
+  """
+}
+
+
+
+
 
 
 workflow {
   downloadChannel = Channel.from(params.accession)
   downloadRef(downloadChannel)
   fastaChannel = Channel.fromPath(params.storeDir)
-  combinedFiles(fastaChannel)
+  combinedChannel = combinedFiles(fastaChannel)
+  mafftalign(combinedChannel)
 }
 
 
