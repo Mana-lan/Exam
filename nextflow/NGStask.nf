@@ -3,7 +3,7 @@ nextflow.enable.dsl = 2
 params.storeDir="${launchDir}/cache"
 params.publishDir= "${launchDir}/publish"
 params.out = "${launchDir}/output"
-params.accession="M21012"
+params.accession="M21013"
 
 process downloadRef {
   storeDir params.storeDir
@@ -54,10 +54,11 @@ process trimalign {
  input:  
    path infile
   output:
-    path "${params.accession}.html"
+    path "trimal"
   script:
   """
-  trimal -in $infile   -htmlout ${params.accession}.html -automated1
+  mkdir trimal
+  trimal -in $infile -htmlout trimal/${params.accession}.html -automated1
   """
 }
 
