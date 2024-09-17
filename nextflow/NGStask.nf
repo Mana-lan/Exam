@@ -24,13 +24,13 @@ process combinedFiles {
 storeDir params.storeDir
 
   input: 
-    path infile
+    val params.accession
 
   output: 
-    path "${params.accession}combined.fasta"
+    path "${params.accession}.combfasta"
 
    """
-   cat $infile/*.fasta > "${params.accession}combined.fasta"
+   cat ${params.storeDir}/*.fasta > "${params.accession}.combfasta"
    """
 }
 
@@ -41,10 +41,10 @@ process mafftalign {
   input:  
    path infile
   output:
-    path "${params.accession}mafft.fasta"
+    path "${params.accession}.mafftfasta"
   script:
   """
-  mafft $infile > ${params.accession}mafft.fasta
+  mafft $infile > ${params.accession}.mafftfasta
   """
 }
 
@@ -55,10 +55,10 @@ process trimalign {
  input:  
    path infile
   output:
-    path "${params.accession}trim.fasta"
+    path "${params.accession}.trimfasta"
   script:
   """
-  trimal -in $infile  -out ${params.accession}trim.fasta -automated1
+  trimal -in $infile  -out ${params.accession}.trimfasta -automated1
   """
 }
 
