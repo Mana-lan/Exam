@@ -3,7 +3,7 @@ nextflow.enable.dsl = 2
 params.storeDir="${launchDir}/cache"
 params.publishDir= "${launchDir}/publish"
 params.out = "${launchDir}/output"
-params.accession="M21013"
+params.accession="M21012"
 
 process downloadRef {
   storeDir params.storeDir
@@ -18,10 +18,9 @@ process downloadRef {
   """
 }
 
-//process downloadSeq
 
 process combinedFiles {
-storeDir params.storeDir
+   storeDir params.storeDir
 
   input: 
     val params.accession
@@ -34,10 +33,12 @@ storeDir params.storeDir
    """
 }
 
+
+
 process mafftalign {
- storeDir params.storeDir
- publishDir params.publishDir, mode:"copy", overwrite:true
- container "https://depot.galaxyproject.org/singularity/mafft%3A7.520--hec16e2b_1"
+  storeDir params.storeDir
+  publishDir params.publishDir, mode:"copy", overwrite:true
+  container "https://depot.galaxyproject.org/singularity/mafft%3A7.520--hec16e2b_1"
   input:  
    path infile
   output:
@@ -49,15 +50,16 @@ process mafftalign {
 }
 
 process trimalign {
- publishDir params.out, mode: "copy", overwrite: true
- container "https://depot.galaxyproject.org/singularity/trimal%3A1.5.0--h4ac6f70_0"
- input:  
-   path infile
+  publishDir params.out, mode: "copy", overwrite: true
+  container "https://depot.galaxyproject.org/singularity/trimal%3A1.5.0--h4ac6f70_0"
+  input:  
+  path infile
   output:
     path "trimal"
   script:
   """
   mkdir trimal
+  trimal -in $infile -out trimal/${params.accession}.fasta -automated1
   trimal -in $infile -htmlout trimal/${params.accession}.html -automated1
   """
 }
@@ -66,12 +68,10 @@ process trimalign {
 
 workflow {
   downloadChannel = Channel.from(params.accession)
-   fastaChannel = Channel.fromPath(params.storeDir)
+  fastaChannel = Channel.fromPath(params.storeDir)
   combinedChannel = downloadRef(downloadChannel) | combinedFiles
   mafftaChannel = mafftalign(combinedChannel)
   trimalign(mafftaChannel)
-
 }
 
 
-//-out ${params.accession}.trimfasta -automated1
